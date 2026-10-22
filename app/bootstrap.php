@@ -37,7 +37,7 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-// Load environment
+// Load environment (do not overwrite existing system/container env vars)
 $envFile = BASE_PATH . '/.env';
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -51,8 +51,12 @@ if (file_exists($envFile)) {
             // Remove quotes
             if (preg_match('/^"(.*)"$/', $value, $m)) $value = $m[1];
             if (preg_match("/^'(.*)'$/", $value, $m)) $value = $m[1];
-            $_ENV[$key] = $value;
-            putenv("$key=$value");
+            
+            // Only set if not already set in container environment
+            if (getenv($key) === false && !array_key_exists($key, $_ENV)) {
+                $_ENV[$key] = $value;
+                putenv("$key=$value");
+            }
         }
     }
 }
@@ -152,13 +156,7 @@ $container->instance('config.app', $appConfig);
 
 // Database
 $container->singleton(App\Core\Database::class, function () {
-    return new App\Core\Database(
-        host: env('DB_HOST', 'localhost'),
-        port: (int) env('DB_PORT', '5432'),
-        dbname: env('DB_NAME', 'intakely'),
-        user: env('DB_USER', 'intakely_app'),
-        password: env('DB_PASS', 'intakely_secret')
-    );
+    return new App\Core\Database();
 });
 
 // Router
