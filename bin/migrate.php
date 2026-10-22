@@ -25,6 +25,7 @@ $pass = env('DB_MIGRATOR_PASS', env('DB_PASS', 'intakely_owner_secret'));
 try {
     $db = new Database($host, $port, $dbname, $user, $pass);
     $pdo = $db->pdo();
+    $pdo->exec("SET app.tenant_id = '00000000-0000-0000-0000-000000000000'");
     echo "Connected to database '{$dbname}' on {$host}:{$port} as '{$user}'.\n\n";
 } catch (\Throwable $e) {
     echo "[ERROR] Could not connect to database: " . $e->getMessage() . "\n";
