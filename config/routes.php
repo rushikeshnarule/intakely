@@ -14,6 +14,26 @@ use App\Core\Router;
 // PUBLIC ROUTES (no auth required)
 // ============================================================
 
+// Admin / Ops Setup (protected by APP_KEY)
+$router->get('/admin/setup-db', function ($request) {
+    $key = $request->query('key');
+    $appKey = env('APP_KEY', 'secret');
+    if (empty($key) || $key !== $appKey) {
+        return \App\Core\Response::html('Unauthorized. Please provide valid ?key= parameter.', 403);
+    }
+    ob_start();
+    try {
+        echo "=== Running Migrations ===\n";
+        require BASE_PATH . '/bin/migrate.php';
+        echo "\n=== Running Seeders ===\n";
+        require BASE_PATH . '/bin/seed.php';
+    } catch (\Throwable $e) {
+        echo "\n[ERROR] " . $e->getMessage() . "\n" . $e->getTraceAsString();
+    }
+    $output = ob_get_clean();
+    return \App\Core\Response::html("<pre style='background:#0d1117;color:#38bdf8;padding:2rem;font-family:monospace;white-space:pre-wrap;'>" . e($output) . "</pre>");
+});
+
 // Marketing site
 $router->get('/', 'MarketingController@home');
 $router->get('/pricing', 'MarketingController@pricing');
