@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: Intakely CRM Public REST API
+  description: Multi-tenant CRM for lead intake, pipeline management and automated follow-up.
+  version: 1.0.0
+  contact:
+    name: Knot8 Technologies
+    url: https://intakely.com
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Local development server
+paths:
+  /leads:
+    get:
+      summary: List leads
+      description: Returns recent leads for the authenticated organization.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, won, lost, all]
+            default: open
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: A list of leads
+    post:
+      summary: Create lead
+      description: Captures a new lead and triggers scoring, duplicate detection, and automations.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                company:
+                  type: string
+                service:
+                  type: string
+                value:
+                  type: number
+                source:
+                  type: string
+      responses:
+        '201':
+          description: Lead created successfully
+  /leads/{id}:
+    get:
+      summary: Get lead details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lead object
+        '404':
+          description: Lead not found
+  /board/move:
+    post:
+      summary: Move lead stage
+      description: Moves a lead to a new stage on the Kanban board with compliance checklist verification.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lead_id
+                - stage_id
+              properties:
+                lead_id:
+                  type: string
+                  format: uuid
+                stage_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Move confirmed
+        '422':
+          description: Compliance checklist requirements missing
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

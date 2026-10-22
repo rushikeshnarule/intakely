@@ -1,0 +1,38 @@
+{
+  "name": "Blank Canvas",
+  "industry": "blank",
+  "description": "Start with a clean slate and configure pipelines, forms, and automations from scratch.",
+  "pipelines": [
+    {
+      "name": "Sales Pipeline",
+      "slug": "sales",
+      "is_default": true,
+      "stages": [
+        { "name": "New", "slug": "new", "color": "#3b82f6", "sort_order": 1, "sla_hours": 2 },
+        { "name": "Qualified", "slug": "qualified", "color": "#06b6d4", "sort_order": 2, "sla_hours": 24 },
+        { "name": "Won", "slug": "won", "color": "#10b981", "sort_order": 3, "is_won": true },
+        { "name": "Lost", "slug": "lost", "color": "#6b7280", "sort_order": 4, "is_lost": true }
+      ]
+    }
+  ],
+  "services": ["General Service"],
+  "urgency_keywords": ["urgent", "emergency"],
+  "tags": [
+    { "name": "Priority", "color": "#ef4444" }
+  ],
+  "forms": [
+    {
+      "name": "Contact Us",
+      "slug": "contact",
+      "description": "Simple contact inquiry form.",
+      "fields": [
+        { "name": "name", "label": "Full Name", "type": "text", "required": true },
+        { "name": "email", "label": "Email Address", "type": "email", "required": true },
+        { "name": "phone", "label": "Phone Number", "type": "phone", "required": false },
+        { "name": "message", "label": "Message", "type": "textarea", "required": true }
+      ]
+    }
+  ],
+  "templates": [],
+  "automations": []
+}

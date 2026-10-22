@@ -1,0 +1,77 @@
+databases:
+  - name: intakely-db
+    databaseName: intakely
+    user: intakely_owner
+    plan: starter
+    postgresMajorVersion: "16"
+
+services:
+  # Web Application Front Controller
+  - type: web
+    name: intakely-web
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: AUTO_SEED
+        value: "true"
+      - key: SESSION_SECURE
+        value: "true"
+      - key: DB_HOST
+        fromDatabase:
+          name: intakely-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: intakely-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: intakely-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: intakely-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: intakely-db
+          property: password
+      - key: APP_KEY
+        generateValue: true
+
+  # Asynchronous Background Queue Worker
+  - type: worker
+    name: intakely-worker
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerCommand: php bin/worker.php
+    plan: starter
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DB_HOST
+        fromDatabase:
+          name: intakely-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: intakely-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: intakely-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: intakely-db
+          property: user
+      - key: DB_PASS
+        fromDatabase:
+          name: intakely-db
+          property: password

@@ -1,0 +1,121 @@
+{
+  "name": "Law Firm",
+  "industry": "law_firm",
+  "description": "Tailored for solicitors, law firms, and legal counsel with compliance gates, conflict checks, and AML tracking.",
+  "pipelines": [
+    {
+      "name": "Personal Legal Services",
+      "slug": "personal",
+      "is_default": true,
+      "stages": [
+        { "name": "New Enquiry", "slug": "new", "color": "#3b82f6", "sort_order": 1, "sla_hours": 2, "required_fields": [] },
+        { "name": "Contacted", "slug": "contacted", "color": "#06b6d4", "sort_order": 2, "sla_hours": 24, "required_fields": [] },
+        { "name": "Consultation Booked", "slug": "consultation-booked", "color": "#8b5cf6", "sort_order": 3, "sla_hours": 48, "required_fields": [] },
+        { "name": "Conflict & ID Check", "slug": "conflict-check", "color": "#f59e0b", "sort_order": 4, "sla_hours": 24, "required_fields": ["conflict_check_passed", "id_aml_verified"] },
+        { "name": "Quote & Care Letter Sent", "slug": "quote-sent", "color": "#ec4899", "sort_order": 5, "sla_hours": 72, "required_fields": ["client_care_letter_sent"] },
+        { "name": "Instructed", "slug": "instructed", "color": "#10b981", "sort_order": 6, "is_won": true, "sla_hours": 0, "required_fields": ["conflict_check_passed", "id_aml_verified", "retainer_received"] },
+        { "name": "Lost / Not Proceeding", "slug": "lost", "color": "#6b7280", "sort_order": 7, "is_lost": true, "sla_hours": 0, "required_fields": [] }
+      ]
+    },
+    {
+      "name": "Commercial & Corporate",
+      "slug": "commercial",
+      "is_default": false,
+      "stages": [
+        { "name": "New Lead", "slug": "new-lead", "color": "#3b82f6", "sort_order": 1, "sla_hours": 1 },
+        { "name": "Discovery Call", "slug": "discovery", "color": "#06b6d4", "sort_order": 2, "sla_hours": 24 },
+        { "name": "Conflict Check", "slug": "conflict-check", "color": "#f59e0b", "sort_order": 3, "required_fields": ["conflict_check_passed"] },
+        { "name": "Fee Proposal", "slug": "fee-proposal", "color": "#ec4899", "sort_order": 4, "sla_hours": 48 },
+        { "name": "Instructed", "slug": "instructed", "color": "#10b981", "sort_order": 5, "is_won": true },
+        { "name": "Lost", "slug": "lost", "color": "#6b7280", "sort_order": 6, "is_lost": true }
+      ]
+    }
+  ],
+  "services": [
+    "Residential Conveyancing",
+    "Commercial Property / Lease",
+    "Wills, Trusts & Probate",
+    "Family & Matrimonial Law",
+    "Employment Law",
+    "Immigration & Visas",
+    "Commercial Litigation",
+    "Corporate & M&A",
+    "Regulatory & White Collar",
+    "Tax Law"
+  ],
+  "urgency_keywords": [
+    "injunction", "eviction", "deadline", "tribunal", "completion date", "court date", "emergency", "freezing order"
+  ],
+  "tags": [
+    { "name": "High Value", "color": "#10b981" },
+    { "name": "Urgent Hearing", "color": "#ef4444" },
+    { "name": "AML Pending", "color": "#f59e0b" },
+    { "name": "Referral", "color": "#8b5cf6" },
+    { "name": "Returning Client", "color": "#3b82f6" },
+    { "name": "After Hours", "color": "#6366f1" }
+  ],
+  "forms": [
+    {
+      "name": "General Legal Intake",
+      "slug": "legal-intake",
+      "description": "Standard client enquiry form with area of law selection and urgency indicators.",
+      "fields": [
+        { "name": "name", "label": "Full Name", "type": "text", "required": true, "placeholder": "Jane Smith" },
+        { "name": "email", "label": "Email Address", "type": "email", "required": true, "placeholder": "jane@example.com" },
+        { "name": "phone", "label": "Phone Number", "type": "phone", "required": true, "placeholder": "+44 7700 900123" },
+        { "name": "service", "label": "Area of Law", "type": "select", "required": true, "options": [
+          "Residential Conveyancing", "Commercial Property / Lease", "Wills, Trusts & Probate", "Family & Matrimonial Law", "Employment Law", "Immigration & Visas", "Commercial Litigation", "Corporate & M&A"
+        ]},
+        { "name": "details", "label": "Brief details of your legal enquiry", "type": "textarea", "required": true, "placeholder": "Please provide an overview of your situation..." },
+        { "name": "has_deadlines", "label": "Are there any upcoming court or completion deadlines?", "type": "select", "required": false, "options": ["No immediate deadline", "Within 7 days", "Within 30 days"] },
+        { "name": "consent", "label": "I consent to Intakely Law Firm processing my data in accordance with the Privacy Notice.", "type": "checkbox", "required": true }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "name": "Legal Enquiry Acknowledged",
+      "slug": "legal-enquiry-ack",
+      "subject": "Thank you for contacting {{tenant_name}} — Enquiry Ref: #{{lead_id}}",
+      "channel": "email",
+      "body": "Dear {{name}},\n\nThank you for reaching out regarding your legal enquiry concerning {{service}}.\n\nA member of our legal intake team has been notified and will review your matter within our standard response window (usually within 2 hours during business hours).\n\nIf your matter involves an urgent court hearing or immediate deadline, please call our emergency desk directly.\n\nWarm regards,\nLegal Intake Team\n{{tenant_name}}"
+    },
+    {
+      "name": "Consultation Confirmation",
+      "slug": "consultation-confirm",
+      "subject": "Initial Legal Consultation Confirmed — {{tenant_name}}",
+      "channel": "email",
+      "body": "Dear {{name}},\n\nYour consultation regarding {{service}} has been scheduled. Please ensure you have photo identification (Passport or Driving Licence) and proof of address ready for our mandatory ID verification check.\n\nKind regards,\n{{tenant_name}}"
+    },
+    {
+      "name": "Client Care & Retainer Follow-up",
+      "slug": "client-care-followup",
+      "subject": "Your Client Care Letter & Terms of Instruction",
+      "channel": "email",
+      "body": "Dear {{name}},\n\nFollowing our consultation regarding {{service}}, we have prepared your formal Client Care Letter setting out our scope of work, fees, and client terms.\n\nPlease review and e-sign the letter so we may formally open your file and commence work.\n\nWarm regards,\n{{tenant_name}}"
+    }
+  ],
+  "automations": [
+    {
+      "name": "Instant Legal Enquiry Acknowledgement",
+      "trigger_type": "lead_created",
+      "conditions": [],
+      "actions": [
+        { "type": "send_email", "template_slug": "legal-enquiry-ack" },
+        { "type": "create_task", "title": "Perform initial conflict check", "due_hours": 4 }
+      ]
+    },
+    {
+      "name": "Urgent Hearing Escalation",
+      "trigger_type": "lead_created",
+      "conditions": [
+        { "field": "urgency_detected", "operator": "equals", "value": true }
+      ],
+      "actions": [
+        { "type": "add_tag", "tag": "Urgent Hearing" },
+        { "type": "set_priority", "priority": "high" },
+        { "type": "create_task", "title": "URGENT: Review time-sensitive enquiry", "due_hours": 1 }
+      ]
+    }
+  ]
+}

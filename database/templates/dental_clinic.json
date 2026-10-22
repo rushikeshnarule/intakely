@@ -1,0 +1,97 @@
+{
+  "name": "Medical & Dental Clinic",
+  "industry": "dental_clinic",
+  "description": "Patient intake, treatment inquiries, consultation booking, and automated no-show recovery.",
+  "pipelines": [
+    {
+      "name": "Patient Treatments",
+      "slug": "treatments",
+      "is_default": true,
+      "stages": [
+        { "name": "New Patient Enquiry", "slug": "new", "color": "#06b6d4", "sort_order": 1, "sla_hours": 1 },
+        { "name": "Call Attempted", "slug": "call-attempted", "color": "#3b82f6", "sort_order": 2, "sla_hours": 6 },
+        { "name": "Consultation Booked", "slug": "consultation-booked", "color": "#8b5cf6", "sort_order": 3, "sla_hours": 48 },
+        { "name": "Attended / Treatment Plan", "slug": "treatment-plan", "color": "#f59e0b", "sort_order": 4, "sla_hours": 72 },
+        { "name": "Treatment Started", "slug": "started", "color": "#10b981", "sort_order": 5, "is_won": true },
+        { "name": "No-Show / Unresponsive", "slug": "no-show", "color": "#ef4444", "sort_order": 6, "sla_hours": 24 },
+        { "name": "Archive / Not Proceeding", "slug": "archived", "color": "#6b7280", "sort_order": 7, "is_lost": true }
+      ]
+    }
+  ],
+  "services": [
+    "General Checkup & Hygiene",
+    "Invisalign & Clear Aligners",
+    "Dental Implants",
+    "Teeth Whitening",
+    "Cosmetic Veneers",
+    "Root Canal Treatment",
+    "Emergency Dental Care",
+    "Wisdom Tooth Extraction"
+  ],
+  "urgency_keywords": [
+    "severe pain", "swollen", "broken tooth", "bleeding", "infection", "emergency", "knocked out"
+  ],
+  "tags": [
+    { "name": "Emergency", "color": "#ef4444" },
+    { "name": "High Value Treatment", "color": "#10b981" },
+    { "name": "Nervous Patient", "color": "#f59e0b" },
+    { "name": "Private Insurance", "color": "#3b82f6" },
+    { "name": "After Hours", "color": "#6366f1" }
+  ],
+  "forms": [
+    {
+      "name": "Book Dental Consultation",
+      "slug": "dental-booking",
+      "description": "Patient intake and preferred appointment consultation form.",
+      "fields": [
+        { "name": "name", "label": "Full Name", "type": "text", "required": true, "placeholder": "John Doe" },
+        { "name": "email", "label": "Email", "type": "email", "required": true, "placeholder": "john@example.com" },
+        { "name": "phone", "label": "Mobile Phone", "type": "phone", "required": true, "placeholder": "+44 7700 900456" },
+        { "name": "service", "label": "Treatment Interested In", "type": "select", "required": true, "options": [
+          "Invisalign & Clear Aligners", "Dental Implants", "Teeth Whitening", "Cosmetic Veneers", "General Checkup", "Emergency Pain"
+        ]},
+        { "name": "urgency", "label": "Are you currently experiencing pain?", "type": "select", "required": true, "options": ["No pain", "Mild sensitivity", "Severe pain / Emergency"] },
+        { "name": "consent", "label": "I consent to clinic staff contacting me regarding appointments and clinical advice.", "type": "checkbox", "required": true }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "name": "Clinic Enquiry Received",
+      "slug": "clinic-enquiry-ack",
+      "subject": "We received your enquiry — {{tenant_name}}",
+      "channel": "email",
+      "body": "Hi {{name}},\n\nThank you for reaching out to {{tenant_name}} regarding {{service}}.\n\nOur patient care coordinator will call or WhatsApp you shortly to discuss suitable appointment times and answer any clinical questions you may have.\n\nIf you are experiencing severe dental pain, please call our emergency desk on 0800 123 4567.\n\nBest regards,\nPatient Concierge Team\n{{tenant_name}}"
+    },
+    {
+      "name": "No-Show Recovery Drip",
+      "slug": "no-show-recovery",
+      "subject": "We missed you at your appointment today — {{tenant_name}}",
+      "channel": "email",
+      "body": "Hi {{name}},\n\nWe missed seeing you today for your scheduled {{service}} consultation.\n\nWe understand that life gets busy! Would you like us to reschedule your appointment for later this week?\n\nYou can click here to rebook in seconds: {{booking_url}}\n\nWarmly,\n{{tenant_name}}"
+    }
+  ],
+  "automations": [
+    {
+      "name": "Instant Patient Acknowledgement",
+      "trigger_type": "lead_created",
+      "conditions": [],
+      "actions": [
+        { "type": "send_email", "template_slug": "clinic-enquiry-ack" },
+        { "type": "create_task", "title": "Call patient to confirm appointment", "due_hours": 2 }
+      ]
+    },
+    {
+      "name": "Dental Pain Emergency Alert",
+      "trigger_type": "lead_created",
+      "conditions": [
+        { "field": "urgency_detected", "operator": "equals", "value": true }
+      ],
+      "actions": [
+        { "type": "add_tag", "tag": "Emergency" },
+        { "type": "set_priority", "priority": "high" },
+        { "type": "create_task", "title": "CALL IMMEDIATELY: Patient in dental pain", "due_hours": 1 }
+      ]
+    }
+  ]
+}
