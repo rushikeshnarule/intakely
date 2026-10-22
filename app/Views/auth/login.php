@@ -98,41 +98,64 @@
             </div>
         </div>
 
-        <!-- Demo Mode Quick-Login Panel -->
-        <?php if ($demoMode): ?>
-            <div class="demo-panel">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
-                    <strong style="font-size:0.8125rem;color:var(--accent-700);text-transform:uppercase;letter-spacing:0.04em;">One-Click Demo Logins</strong>
-                    <span class="badge badge-primary">Seed Data</span>
+        <!-- Chambers Demo Credentials Panel -->
+        <div class="demo-panel" style="background:var(--bg-primary);border:1px solid var(--border-default);border-radius:var(--radius-xl);padding:1.25rem;margin-top:1.5rem;box-shadow:var(--shadow-sm);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="font-size:1rem;">⚖️</span>
+                    <strong style="font-size:0.8125rem;color:var(--text-primary);letter-spacing:-0.01em;">Demo Chambers Credentials</strong>
                 </div>
-                <div style="font-size:0.75rem;color:var(--text-tertiary);margin-bottom:0.75rem;">
-                    Click any persona below to auto-fill credentials:
-                </div>
+                <span class="badge badge-success" style="font-size:0.6875rem;">1-Click Auto-Fill</span>
+            </div>
+            
+            <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:0.85rem;line-height:1.4;">
+                Select any persona below to auto-fill credentials and sign into the live docket:
+            </p>
 
-                <div style="font-weight:600;font-size:0.75rem;margin-bottom:0.35rem;color:var(--text-primary);">Apex Law LLP (Law Firm Personas)</div>
-                <button type="button" class="demo-user-btn" onclick="fillLogin('eleanor@example.com', 'password123')">
-                    <div>
-                        <div style="font-weight:600;font-size:0.8125rem;">Eleanor Vance</div>
-                        <div style="font-size:0.6875rem;color:var(--text-tertiary);">Managing Partner (Full Access)</div>
+            <div style="display:flex;flex-direction:column;gap:0.45rem;">
+                <!-- Eleanor -->
+                <button type="button" class="demo-user-btn" onclick="fillLogin('eleanor@example.com', 'password123')" style="padding:0.6rem 0.85rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-lg);cursor:pointer;">
+                    <div style="text-align:left;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="font-weight:700;font-size:0.8125rem;color:var(--text-primary);">Eleanor Vance</span>
+                            <span class="badge badge-primary" style="font-size:0.65rem;">Managing Partner</span>
+                        </div>
+                        <div style="font-size:0.7188rem;color:var(--text-secondary);font-family:monospace;margin-top:0.2rem;">
+                            eleanor@example.com <span style="color:var(--text-tertiary);">• password123</span>
+                        </div>
                     </div>
-                    <span class="badge badge-success">Owner</span>
+                    <span style="font-size:0.75rem;font-weight:600;color:var(--accent-600);">&rarr; Enter</span>
                 </button>
-                <button type="button" class="demo-user-btn" onclick="fillLogin('david@example.com', 'password123')">
-                    <div>
-                        <div style="font-weight:600;font-size:0.8125rem;">David Ross</div>
-                        <div style="font-size:0.6875rem;color:var(--text-tertiary);">Associate Counsel (Conveyancing)</div>
+
+                <!-- David -->
+                <button type="button" class="demo-user-btn" onclick="fillLogin('david@example.com', 'password123')" style="padding:0.6rem 0.85rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-lg);cursor:pointer;">
+                    <div style="text-align:left;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="font-weight:700;font-size:0.8125rem;color:var(--text-primary);">David Ross</span>
+                            <span class="badge badge-neutral" style="font-size:0.65rem;">Associate Counsel</span>
+                        </div>
+                        <div style="font-size:0.7188rem;color:var(--text-secondary);font-family:monospace;margin-top:0.2rem;">
+                            david@example.com <span style="color:var(--text-tertiary);">• password123</span>
+                        </div>
                     </div>
-                    <span class="badge badge-neutral">Agent</span>
+                    <span style="font-size:0.75rem;font-weight:600;color:var(--accent-600);">&rarr; Enter</span>
                 </button>
-                <button type="button" class="demo-user-btn" onclick="fillLogin('sarah@example.com', 'password123')">
-                    <div>
-                        <div style="font-weight:600;font-size:0.8125rem;">Sarah Jenkins</div>
-                        <div style="font-size:0.6875rem;color:var(--text-tertiary);">Senior Solicitor (Commercial)</div>
+
+                <!-- Sarah -->
+                <button type="button" class="demo-user-btn" onclick="fillLogin('sarah@example.com', 'password123')" style="padding:0.6rem 0.85rem;display:flex;align-items:center;justify-content:space-between;background:var(--bg-secondary);border:1px solid var(--border-default);border-radius:var(--radius-lg);cursor:pointer;">
+                    <div style="text-align:left;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style="font-weight:700;font-size:0.8125rem;color:var(--text-primary);">Sarah Jenkins</span>
+                            <span class="badge badge-neutral" style="font-size:0.65rem;">Senior Solicitor</span>
+                        </div>
+                        <div style="font-size:0.7188rem;color:var(--text-secondary);font-family:monospace;margin-top:0.2rem;">
+                            sarah@example.com <span style="color:var(--text-tertiary);">• password123</span>
+                        </div>
                     </div>
-                    <span class="badge badge-primary">Admin</span>
+                    <span style="font-size:0.75rem;font-weight:600;color:var(--accent-600);">&rarr; Enter</span>
                 </button>
             </div>
-        <?php endif; ?>
+        </div>
     </div>
 
     <script>
