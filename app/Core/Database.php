@@ -22,13 +22,35 @@ final class Database
     private bool $inTransaction = false;
 
     public function __construct(
-        string $host = 'localhost',
-        int $port = 5432,
-        string $dbname = 'intakely',
-        string $user = 'intakely_app',
-        string $password = '',
+        ?string $host = null,
+        ?int $port = null,
+        ?string $dbname = null,
+        ?string $user = null,
+        ?string $password = null,
     ) {
-        $this->dsn      = "pgsql:host={$host};port={$port};dbname={$dbname}";
+        $dbUrl = env('DATABASE_URL');
+        if (!empty($dbUrl)) {
+            $parsed = parse_url($dbUrl);
+            $host = $parsed['host'] ?? $host;
+            $port = isset($parsed['port']) ? (int)$parsed['port'] : $port;
+            $dbname = isset($parsed['path']) ? ltrim($parsed['path'], '/') : $dbname;
+            $user = $parsed['user'] ?? $user;
+            $password = $parsed['pass'] ?? $password;
+        }
+
+        $host = $host ?? env('DB_HOST', 'localhost');
+        $port = $port ?? (int) env('DB_PORT', '5432');
+        $dbname = $dbname ?? env('DB_NAME', 'intakely');
+        $user = $user ?? env('DB_USER', 'intakely_app');
+        $password = $password ?? env('DB_PASS', '');
+
+        $dsn = "pgsql:host={$host};port={$port};dbname={$dbname}";
+        $sslmode = env('DB_SSLMODE');
+        if (!empty($sslmode)) {
+            $dsn .= ";sslmode={$sslmode}";
+        }
+
+        $this->dsn      = $dsn;
         $this->user     = $user;
         $this->password = $password;
     }
