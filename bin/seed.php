@@ -41,6 +41,9 @@ if ($existing) {
     echo "  Deleting existing Apex Law tenant to re-seed cleanly...\n";
     $tid = $existing['id'];
     $pdo->exec("SET app.tenant_id = '{$tid}'");
+    $pdo->exec("DELETE FROM messages WHERE tenant_id = '{$tid}'");
+    $pdo->exec("DELETE FROM form_submissions WHERE tenant_id = '{$tid}'");
+    $pdo->exec("DELETE FROM automation_logs WHERE tenant_id = '{$tid}'");
     $pdo->exec("DELETE FROM lead_activities WHERE tenant_id = '{$tid}'");
     $pdo->exec("DELETE FROM tasks WHERE tenant_id = '{$tid}'");
     $pdo->exec("DELETE FROM appointments WHERE tenant_id = '{$tid}'");
