@@ -31,6 +31,7 @@ final class AuthMiddleware
      * Route prefix patterns that are public.
      */
     private const PUBLIC_PREFIXES = [
+        '/admin/',         // Admin setup endpoints protected by secret key
         '/f/',             // Public intake forms
         '/book/',          // Public booking pages
         '/api/v1/webhooks/',
