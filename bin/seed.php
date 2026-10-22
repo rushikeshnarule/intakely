@@ -85,11 +85,11 @@ $apex = $tenantService->create([
 ]);
 $apexId = $apex['id'];
 
+// Set tenant context for seeder before applying templates and inserting data
+$pdo->exec("SET app.tenant_id = '{$apexId}'");
+
 // Apply Law Firm industry template
 $tenantService->applyTemplate($apexId, 'law_firm');
-
-// Set tenant context for seeder
-$pdo->exec("SET app.tenant_id = '{$apexId}'");
 
 // Create 5 users across roles
 $apexUsers = [
