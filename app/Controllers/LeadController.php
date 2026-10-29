@@ -218,6 +218,18 @@ final class LeadController
         // Team members for reassign
         $users = $this->db->fetchAll('SELECT id, name FROM users WHERE tenant_id = $1 AND is_active = true', [$tenantId]);
 
+        if ($request->isJson() || $request->query('format') === 'json' || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return Response::json([
+                'success' => true,
+                'lead' => $lead,
+                'activities' => $activities,
+                'tasks' => $tasks,
+                'stages' => $stages,
+                'duplicates' => array_values($duplicates),
+                'users' => $users,
+            ]);
+        }
+
         return Response::view('leads/show', [
             'title' => $lead['name'] . ' — Lead Details',
             'activeNav' => 'leads',
@@ -247,9 +259,99 @@ final class LeadController
                 [$tenantId, $leadId, $userId, $content]
             );
             flash('success', 'Note added to timeline.');
+
+            if ($request->isJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+                $user = $this->db->fetchOne('SELECT name FROM users WHERE id = $1', [$userId]);
+                return Response::json([
+                    'success' => true,
+                    'message' => 'Note added to timeline.',
+                    'activity' => [
+                        'type' => 'note',
+                        'content' => $content,
+                        'user_name' => $user['name'] ?? 'Counsel',
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ]
+                ]);
+            }
+        }
+
+        if ($request->isJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
+            return Response::json(['success' => false, 'error' => 'Note content cannot be empty.'], 422);
         }
 
         return Response::redirect('/leads/' . $leadId);
+    }
+
+    /**
+     * Quick Update for Drawer / Instant Board actions.
+     */
+    public function quickUpdate(Request $request): Response
+    {
+        $tenantId = $request->getAttribute('_tenant_id');
+        $userId = $request->getAttribute('_user_id');
+        $leadId = $request->getAttribute('id');
+
+        $lead = $this->db->fetchOne('SELECT * FROM leads WHERE id = $1 AND tenant_id = $2', [$leadId, $tenantId]);
+        if (!$lead) {
+            return Response::json(['success' => false, 'error' => 'Matter not found.'], 404);
+        }
+
+        $custom = is_string($lead['custom_fields'] ?? null) ? json_decode($lead['custom_fields'], true) : ($lead['custom_fields'] ?? []);
+        if (!is_array($custom)) $custom = [];
+
+        $updates = [];
+        $params = [];
+        $pIdx = 1;
+
+        if ($request->has('value')) {
+            $updates[] = 'value = $' . $pIdx++;
+            $params[] = (float) $request->input('value');
+        }
+        if ($request->has('priority')) {
+            $updates[] = 'priority = $' . $pIdx++;
+            $params[] = $request->input('priority');
+        }
+        if ($request->has('assigned_to')) {
+            $updates[] = 'assigned_to = $' . $pIdx++;
+            $params[] = $request->input('assigned_to') ?: null;
+        }
+        if ($request->has('toggle_conflict')) {
+            $custom['conflict_check_passed'] = empty($custom['conflict_check_passed']);
+            $updates[] = 'custom_fields = $' . $pIdx++;
+            $params[] = json_encode($custom);
+
+            $this->db->execute(
+                'INSERT INTO lead_activities (id, tenant_id, lead_id, user_id, type, content, created_at)
+                 VALUES (gen_random_uuid(), $1, $2, $3, \'system\', $4, NOW())',
+                [$tenantId, $leadId, $userId, $custom['conflict_check_passed'] ? 'SRA Conflict of Interest check CLEARED.' : 'SRA Conflict of Interest check marked PENDING.']
+            );
+        }
+        if ($request->has('toggle_aml')) {
+            $custom['id_aml_verified'] = empty($custom['id_aml_verified']);
+            $hasCustomInUpdates = false;
+            foreach ($updates as $u) {
+                if (str_starts_with($u, 'custom_fields')) { $hasCustomInUpdates = true; break; }
+            }
+            if (!$hasCustomInUpdates) {
+                $updates[] = 'custom_fields = $' . $pIdx++;
+                $params[] = json_encode($custom);
+            }
+        }
+
+        if (!empty($updates)) {
+            $updates[] = 'updated_at = NOW()';
+            $sql = 'UPDATE leads SET ' . implode(', ', $updates) . ' WHERE id = $' . $pIdx++ . ' AND tenant_id = $' . $pIdx;
+            $params[] = $leadId;
+            $params[] = $tenantId;
+            $this->db->execute($sql, $params);
+        }
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Matter updated successfully.',
+            'conflict_cleared' => !empty($custom['conflict_check_passed']),
+            'aml_verified' => !empty($custom['id_aml_verified']),
+        ]);
     }
 
     /**
