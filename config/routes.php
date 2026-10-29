@@ -103,6 +103,7 @@ $router->get('/leads/{id}', 'LeadController@show');
 $router->post('/leads/{id}', 'LeadController@update');
 $router->post('/leads/{id}/delete', 'LeadController@destroy');
 $router->post('/leads/{id}/stage', 'LeadController@updateStage');
+$router->post('/leads/{id}/quick-update', 'LeadController@quickUpdate');
 $router->post('/leads/{id}/assign', 'LeadController@assign');
 $router->post('/leads/{id}/score', 'LeadController@updateScore');
 $router->post('/leads/{id}/note', 'LeadController@addNote');
