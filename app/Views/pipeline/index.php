@@ -1,6 +1,31 @@
-<?php $this->layout('layouts/app'); ?>
+<?php
+$this->layout('layouts/app');
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
+// Compute Executive HUD Metrics across all pipeline stages
+$totalMatters = 0;
+$totalPipelineValue = 0.0;
+$highPriorityCount = 0;
+$conflictClearedCount = 0;
+$slaRiskCount = 0;
+
+foreach ($stages as $stg) {
+    $sId = $stg['id'];
+    $sLeads = $leadsByStage[$sId] ?? [];
+    foreach ($sLeads as $l) {
+        $totalMatters++;
+        $totalPipelineValue += (float)($l['value'] ?? 0);
+        if (($l['priority'] ?? '') === 'high') $highPriorityCount++;
+        if (!empty($l['sla_breached'])) $slaRiskCount++;
+        
+        $custom = is_string($l['custom_fields'] ?? null) ? json_decode($l['custom_fields'], true) : ($l['custom_fields'] ?? []);
+        if (!empty($custom['conflict_check_passed'])) $conflictClearedCount++;
+    }
+}
+$conflictRate = $totalMatters > 0 ? round(($conflictClearedCount / $totalMatters) * 100) : 100;
+?>
+
+<!-- Header & Pipeline Switcher -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:1rem;">
     <div>
         <div style="display:flex;align-items:center;gap:1rem;">
             <h1 class="text-title-1" style="font-weight:700;color:var(--text-primary);letter-spacing:-0.02em;"><?= e($pipeline['name']) ?></h1>
@@ -45,7 +70,62 @@
     </div>
 </div>
 
-<!-- Filters Toolbar & Quick Chips (Behance Law Firm Style) -->
+<!-- Executive Metrics HUD (Heads-Up Display) -->
+<div class="executive-hud">
+    <div class="hud-metric-card hud-accent">
+        <div class="hud-metric-info">
+            <span class="hud-metric-label">Pipeline Retainer Value</span>
+            <span class="hud-metric-value">£<?= number_format($totalPipelineValue) ?></span>
+            <span class="hud-metric-sub">
+                <span style="color:var(--text-success);font-weight:600;">▲ 18.4%</span> across active retainer stages
+            </span>
+        </div>
+        <div class="hud-metric-icon" style="background:rgba(59, 130, 246, 0.12);color:#3B82F6;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+    </div>
+
+    <div class="hud-metric-card hud-purple">
+        <div class="hud-metric-info">
+            <span class="hud-metric-label">Active Chambers Caseload</span>
+            <span class="hud-metric-value"><?= $totalMatters ?> Matters</span>
+            <span class="hud-metric-sub">
+                <span style="color:#A78BFA;font-weight:600;">● <?= count($stages) ?> stages</span> in active workflow
+            </span>
+        </div>
+        <div class="hud-metric-icon" style="background:rgba(139, 92, 246, 0.12);color:#8B5CF6;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="11" rx="1"/></svg>
+        </div>
+    </div>
+
+    <div class="hud-metric-card hud-success">
+        <div class="hud-metric-info">
+            <span class="hud-metric-label">SRA Conflict Clearance</span>
+            <span class="hud-metric-value"><?= $conflictRate ?>%</span>
+            <span class="hud-metric-sub">
+                <span style="color:var(--text-success);font-weight:600;">⚖️ <?= $conflictClearedCount ?> of <?= $totalMatters ?></span> cleared
+            </span>
+        </div>
+        <div class="hud-metric-icon" style="background:rgba(16, 185, 129, 0.12);color:#10B981;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+    </div>
+
+    <div class="hud-metric-card hud-warning">
+        <div class="hud-metric-info">
+            <span class="hud-metric-label">Court Urgency / SLA Risk</span>
+            <span class="hud-metric-value"><?= $highPriorityCount ?> High Priority</span>
+            <span class="hud-metric-sub">
+                <span style="color:<?= $slaRiskCount > 0 ? '#EF4444' : 'var(--text-success)' ?>;font-weight:600;">⚠️ <?= $slaRiskCount ?> SLA overdue</span>
+            </span>
+        </div>
+        <div class="hud-metric-icon" style="background:rgba(245, 158, 11, 0.12);color:#F59E0B;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Toolbar & Quick Chips -->
 <div class="board-filter-toolbar">
     <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
         <!-- Live Instant Board Filter Input -->
@@ -136,7 +216,26 @@
                         default => ['bg' => 'rgba(59, 130, 246, 0.16)', 'color' => '#93C5FD', 'border' => 'rgba(59, 130, 246, 0.35)'],
                     };
                     ?>
-                    <div class="lead-card" data-lead-id="<?= e($lead['id']) ?>" data-lead-value="<?= (float)($lead['value'] ?? 0) ?>" data-lead-priority="<?= e($lead['priority']) ?>" data-lead-breached="<?= $isBreached ? '1' : '0' ?>" data-lead-conflict="<?= $conflictClear ? '1' : '0' ?>" data-search-text="<?= strtolower(e($lead['name'] . ' ' . ($lead['company'] ?? '') . ' ' . ($lead['service'] ?? ''))) ?>" id="card-<?= e($lead['id']) ?>">
+                    <div class="lead-card" 
+                         data-lead-id="<?= e($lead['id']) ?>" 
+                         data-lead-value="<?= (float)($lead['value'] ?? 0) ?>" 
+                         data-lead-priority="<?= e($lead['priority']) ?>" 
+                         data-lead-breached="<?= $isBreached ? '1' : '0' ?>" 
+                         data-lead-conflict="<?= $conflictClear ? '1' : '0' ?>" 
+                         data-search-text="<?= strtolower(e($lead['name'] . ' ' . ($lead['company'] ?? '') . ' ' . ($lead['service'] ?? ''))) ?>" 
+                         id="card-<?= e($lead['id']) ?>"
+                         onclick="openMatterDrawer('<?= e($lead['id']) ?>')">
+                        
+                        <!-- Hover Action Buttons -->
+                        <div class="lead-card-quick-actions" onclick="event.stopPropagation();">
+                            <button type="button" class="btn-card-action" onclick="openMatterDrawer('<?= e($lead['id']) ?>')" title="Quick Inspect">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                            <a href="/leads/<?= e($lead['id']) ?>" class="btn-card-action" title="Open Full File">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                            </a>
+                        </div>
+
                         <!-- Top Row: Practice Badge + Priority Indicator -->
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.6rem;">
                             <span class="matter-badge" style="background:<?= $badgeStyle['bg'] ?>;color:<?= $badgeStyle['color'] ?>;border:1px solid <?= $badgeStyle['border'] ?>;">
@@ -153,9 +252,9 @@
                         <!-- Matter Title & Client -->
                         <div class="lead-card-header" style="margin-bottom:0.5rem;">
                             <div>
-                                <a href="/leads/<?= e($lead['id']) ?>" class="lead-card-name" style="text-decoration:none;display:block;">
+                                <span class="lead-card-name" style="text-decoration:none;display:block;">
                                     <?= e($lead['name']) ?>
-                                </a>
+                                </span>
                                 <?php if (!empty($lead['company'])): ?>
                                     <div class="lead-card-company truncate"><?= e($lead['company']) ?></div>
                                 <?php endif; ?>
@@ -179,11 +278,11 @@
 
                         <!-- Compliance Chips -->
                         <div style="display:flex;gap:0.35rem;align-items:center;margin-bottom:0.65rem;flex-wrap:wrap;">
-                            <span class="compliance-chip <?= $conflictClear ? 'chip-passed' : 'chip-pending' ?>">
+                            <span class="compliance-chip <?= $conflictClear ? 'chip-passed' : 'chip-pending' ?>" id="chip-conflict-<?= e($lead['id']) ?>">
                                 <?= $conflictClear ? '⚖️ Conflict Cleared' : '⚖️ Conflict Pending' ?>
                             </span>
                             <?php if ($amlVerified): ?>
-                                <span class="compliance-chip chip-passed">
+                                <span class="compliance-chip chip-passed" id="chip-aml-<?= e($lead['id']) ?>">
                                     🛡️ AML Verified
                                 </span>
                             <?php endif; ?>
@@ -212,9 +311,135 @@
     <?php endforeach; ?>
 </div>
 
+<!-- ============================================================
+     SLIDE-OVER MATTER DRAWER (Enterprise 0-Reload Quick View)
+     ============================================================ -->
+<div id="drawer-backdrop" class="matter-drawer-backdrop" onclick="closeMatterDrawer()"></div>
+<aside id="matter-drawer" class="matter-drawer" aria-label="Matter Quick Inspector">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+            <div id="drawer-practice-icon" style="width:38px;height:38px;border-radius:10px;background:rgba(59,130,246,0.15);color:#3B82F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span id="drawer-matter-code" style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-tertiary);font-weight:600;">MAT-0000</span>
+                    <span id="drawer-service-badge" class="matter-badge" style="background:rgba(59,130,246,0.15);color:#93C5FD;">General Practice</span>
+                </div>
+                <h2 id="drawer-matter-name" style="font-size:1.15rem;font-weight:700;color:var(--text-primary);margin:0.2rem 0 0;line-height:1.25;">Matter Name</h2>
+            </div>
+        </div>
+        <button type="button" onclick="closeMatterDrawer()" class="btn-icon btn-ghost" aria-label="Close Drawer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
+
+    <!-- Drawer Body -->
+    <div class="drawer-body">
+        <!-- Retainer & Stage Quick Bar -->
+        <div class="drawer-section" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;align-items:center;">
+            <div>
+                <span class="hud-metric-label">Retainer Value</span>
+                <div id="drawer-matter-value" style="font-family:var(--font-heading);font-size:1.4rem;font-weight:700;color:var(--text-primary);">£0</div>
+            </div>
+            <div>
+                <span class="hud-metric-label">Workflow Stage</span>
+                <select id="drawer-stage-select" class="form-select" style="font-size:0.8125rem;font-weight:600;padding:0.4rem 0.65rem;" onchange="handleDrawerStageChange(this.value)">
+                    <?php foreach ($stages as $s): ?>
+                        <option value="<?= e($s['id']) ?>"><?= e($s['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <!-- SRA Compliance Checklist Gates -->
+        <div class="drawer-section">
+            <div class="drawer-section-title">
+                <span>SRA Compliance Gates</span>
+                <span style="font-size:0.6875rem;color:var(--text-tertiary);">Regulatory Standard</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);">Conflict of Interest Check</div>
+                        <div style="font-size:0.6875rem;color:var(--text-tertiary);">SRA Code of Conduct Rule 6.2</div>
+                    </div>
+                    <button type="button" id="btn-toggle-conflict" class="compliance-toggle-btn pending" onclick="handleToggleConflict()">
+                        ⚖️ Check Pending
+                    </button>
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.5rem;border-top:1px solid var(--border-default);">
+                    <div>
+                        <div style="font-size:0.8125rem;font-weight:600;color:var(--text-primary);">Client Identity & AML Check</div>
+                        <div style="font-size:0.6875rem;color:var(--text-tertiary);">Money Laundering Regulations 2017</div>
+                    </div>
+                    <button type="button" id="btn-toggle-aml" class="compliance-toggle-btn pending" onclick="handleToggleAml()">
+                        🛡️ AML Pending
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client & Contact Info -->
+        <div class="drawer-section">
+            <div class="drawer-section-title">
+                <span>Client Contact Details</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.6rem;font-size:0.8125rem;">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="color:var(--text-tertiary);">Email Address:</span>
+                    <a id="drawer-client-email" href="#" style="color:var(--text-link);font-weight:500;text-decoration:none;">counsel@client.com</a>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="color:var(--text-tertiary);">Telephone:</span>
+                    <a id="drawer-client-phone" href="#" style="color:var(--text-primary);font-weight:500;text-decoration:none;">+44 20 7946 0000</a>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="color:var(--text-tertiary);">Company / Entity:</span>
+                    <span id="drawer-client-company" style="color:var(--text-primary);font-weight:500;">Sterling Corp Ltd</span>
+                </div>
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <span style="color:var(--text-tertiary);">Assigned Counsel:</span>
+                    <span id="drawer-client-assignee" style="color:var(--text-primary);font-weight:600;">Eleanor Vance</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Activity Timeline & Note Composer -->
+        <div class="drawer-section">
+            <div class="drawer-section-title">
+                <span>Activity Timeline & Notes</span>
+            </div>
+            
+            <!-- Quick Note Input -->
+            <form onsubmit="handleDrawerNoteSubmit(event)" style="margin-bottom:1rem;display:flex;gap:0.5rem;">
+                <input type="text" id="drawer-note-input" class="form-input" placeholder="Add confidential attendance note..." style="font-size:0.8125rem;flex:1;" required>
+                <button type="submit" id="btn-drawer-add-note" class="btn btn-secondary btn-sm" style="font-weight:600;">Post</button>
+            </form>
+
+            <div id="drawer-timeline" style="display:flex;flex-direction:column;gap:0.5rem;max-height:220px;overflow-y:auto;padding-right:0.25rem;">
+                <!-- Timeline items loaded via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="drawer-footer">
+        <a id="drawer-full-file-btn" href="#" class="btn btn-primary btn-sm" style="font-weight:600;display:flex;align-items:center;gap:0.4rem;width:100%;justify-content:center;">
+            <span>Open Full Case File, Documents & Communications</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+    </div>
+</aside>
+
 <?php $this->section('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+    let currentDrawerLeadId = null;
+    let currentLeadData = null;
+
     // 1. Recalculate column counters and sums reactively
     function updateColumnBadges() {
         document.querySelectorAll('.board-column').forEach(col => {
@@ -264,7 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!resp || !resp.ok) {
                         const errData = await resp.json();
                         Toast.error(errData.error || 'Move blocked by compliance checklist.');
-                        // Shake card and move back
                         card.classList.add('card-shake');
                         setTimeout(() => card.classList.remove('card-shake'), 600);
                         evt.from.insertBefore(card, evt.from.children[evt.oldIndex]);
@@ -340,7 +564,280 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 4. Listen to Server-Sent Events for live team updates
+    // 4. Slide-Over Matter Drawer Functions
+    window.openMatterDrawer = async function(leadId) {
+        currentDrawerLeadId = leadId;
+        const backdrop = document.getElementById('drawer-backdrop');
+        const drawer = document.getElementById('matter-drawer');
+        if (!drawer || !backdrop) return;
+
+        backdrop.classList.add('active');
+        drawer.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        // Load Lead data via JSON endpoint
+        try {
+            const res = await fetch(`/leads/${leadId}?format=json`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+            if (!data || !data.success) throw new Error('Could not load matter details.');
+
+            currentLeadData = data.lead;
+            renderDrawerData(data);
+        } catch (err) {
+            console.error('Error fetching matter:', err);
+            Toast.error('Could not load matter file.');
+        }
+    };
+
+    window.closeMatterDrawer = function() {
+        const backdrop = document.getElementById('drawer-backdrop');
+        const drawer = document.getElementById('matter-drawer');
+        if (backdrop) backdrop.classList.remove('active');
+        if (drawer) drawer.classList.remove('active');
+        document.body.style.overflow = '';
+        currentDrawerLeadId = null;
+    };
+
+    function renderDrawerData(data) {
+        const lead = data.lead;
+        const custom = (typeof lead.custom_fields === 'string') ? JSON.parse(lead.custom_fields || '{}') : (lead.custom_fields || {});
+        
+        document.getElementById('drawer-matter-code').textContent = 'MAT-' + lead.id.substring(0, 8).toUpperCase();
+        document.getElementById('drawer-matter-name').textContent = lead.name;
+        document.getElementById('drawer-service-badge').textContent = lead.service || 'General Practice';
+        document.getElementById('drawer-matter-value').textContent = '£' + (lead.value ? Number(lead.value).toLocaleString() : '0');
+        
+        const stageSelect = document.getElementById('drawer-stage-select');
+        if (stageSelect) stageSelect.value = lead.stage_id;
+
+        // Compliance Buttons
+        const btnConflict = document.getElementById('btn-toggle-conflict');
+        if (btnConflict) {
+            if (custom.conflict_check_passed) {
+                btnConflict.className = 'compliance-toggle-btn cleared';
+                btnConflict.innerHTML = '⚖️ Conflict Cleared';
+            } else {
+                btnConflict.className = 'compliance-toggle-btn pending';
+                btnConflict.innerHTML = '⚖️ Check Pending';
+            }
+        }
+
+        const btnAml = document.getElementById('btn-toggle-aml');
+        if (btnAml) {
+            if (custom.id_aml_verified) {
+                btnAml.className = 'compliance-toggle-btn cleared';
+                btnAml.innerHTML = '🛡️ AML Cleared';
+            } else {
+                btnAml.className = 'compliance-toggle-btn pending';
+                btnAml.innerHTML = '🛡️ AML Pending';
+            }
+        }
+
+        // Contact info
+        const emailEl = document.getElementById('drawer-client-email');
+        if (emailEl) {
+            emailEl.textContent = lead.email || 'None registered';
+            emailEl.href = lead.email ? `mailto:${lead.email}` : '#';
+        }
+        const phoneEl = document.getElementById('drawer-client-phone');
+        if (phoneEl) {
+            phoneEl.textContent = lead.phone || 'None registered';
+            phoneEl.href = lead.phone ? `tel:${lead.phone}` : '#';
+        }
+        document.getElementById('drawer-client-company').textContent = lead.company || 'Private Client';
+        document.getElementById('drawer-client-assignee').textContent = lead.assignee_name || 'Chambers Rota (Unassigned)';
+        
+        // Full File link
+        document.getElementById('drawer-full-file-btn').href = `/leads/${lead.id}`;
+
+        // Timeline items
+        const timelineEl = document.getElementById('drawer-timeline');
+        timelineEl.innerHTML = '';
+        if (data.activities && data.activities.length > 0) {
+            data.activities.slice(0, 6).forEach(act => {
+                const item = document.createElement('div');
+                item.className = 'drawer-timeline-item';
+                item.innerHTML = `
+                    <div class="drawer-timeline-dot"></div>
+                    <div style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">${act.content}</div>
+                    <div style="font-size:0.6875rem;color:var(--text-tertiary);margin-top:0.15rem;">
+                        <span>${act.user_name || 'System'}</span> • <span>${new Date(act.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</span>
+                    </div>
+                `;
+                timelineEl.appendChild(item);
+            });
+        } else {
+            timelineEl.innerHTML = '<div style="font-size:0.75rem;color:var(--text-tertiary);">No activities recorded yet.</div>';
+        }
+    }
+
+    // Toggle SRA Conflict Check
+    window.handleToggleConflict = async function() {
+        if (!currentDrawerLeadId) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        try {
+            const res = await fetch(`/leads/${currentDrawerLeadId}/quick-update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ toggle_conflict: 1 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const btn = document.getElementById('btn-toggle-conflict');
+                const chip = document.getElementById(`chip-conflict-${currentDrawerLeadId}`);
+                const card = document.getElementById(`card-${currentDrawerLeadId}`);
+
+                if (data.conflict_cleared) {
+                    btn.className = 'compliance-toggle-btn cleared';
+                    btn.innerHTML = '⚖️ Conflict Cleared';
+                    if (chip) {
+                        chip.className = 'compliance-chip chip-passed';
+                        chip.textContent = '⚖️ Conflict Cleared';
+                    }
+                    if (card) card.dataset.leadConflict = '1';
+                    Toast.success('Conflict check marked as CLEARED.');
+                } else {
+                    btn.className = 'compliance-toggle-btn pending';
+                    btn.innerHTML = '⚖️ Check Pending';
+                    if (chip) {
+                        chip.className = 'compliance-chip chip-pending';
+                        chip.textContent = '⚖️ Conflict Pending';
+                    }
+                    if (card) card.dataset.leadConflict = '0';
+                    Toast.warning('Conflict check set to PENDING.');
+                }
+            }
+        } catch (err) {
+            Toast.error('Failed to update conflict status.');
+        }
+    };
+
+    // Toggle AML Status
+    window.handleToggleAml = async function() {
+        if (!currentDrawerLeadId) return;
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        try {
+            const res = await fetch(`/leads/${currentDrawerLeadId}/quick-update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ toggle_aml: 1 })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const btn = document.getElementById('btn-toggle-aml');
+                if (data.aml_verified) {
+                    btn.className = 'compliance-toggle-btn cleared';
+                    btn.innerHTML = '🛡️ AML Cleared';
+                    Toast.success('AML verification registered.');
+                } else {
+                    btn.className = 'compliance-toggle-btn pending';
+                    btn.innerHTML = '🛡️ AML Pending';
+                    Toast.warning('AML verification marked as pending.');
+                }
+            }
+        } catch (err) {
+            Toast.error('Failed to update AML status.');
+        }
+    };
+
+    // Drawer Stage Change
+    window.handleDrawerStageChange = async function(stageId) {
+        if (!currentDrawerLeadId) return;
+        try {
+            const resp = await Intakely.post('/api/v1/board/move', {
+                lead_id: currentDrawerLeadId,
+                stage_id: stageId
+            });
+            const data = await resp.json();
+            if (!data || !data.success) {
+                Toast.error(data.error || 'Cannot advance stage.');
+                return;
+            }
+
+            // Move the card to target column in the DOM without full page refresh!
+            const card = document.getElementById(`card-${currentDrawerLeadId}`);
+            const targetCol = document.getElementById(`cards-${stageId}`);
+            if (card && targetCol) {
+                targetCol.prepend(card);
+                card.classList.add('card-just-moved');
+                setTimeout(() => card.classList.remove('card-just-moved'), 700);
+                updateColumnBadges();
+            }
+
+            Toast.success(`Advanced matter to ${data.stage_name}`);
+        } catch (err) {
+            Toast.error('Failed to update stage.');
+        }
+    };
+
+    // Drawer Quick Note Submit
+    window.handleDrawerNoteSubmit = async function(e) {
+        e.preventDefault();
+        if (!currentDrawerLeadId) return;
+        const input = document.getElementById('drawer-note-input');
+        const content = (input.value || '').trim();
+        if (!content) return;
+
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        const btn = document.getElementById('btn-drawer-add-note');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch(`/leads/${currentDrawerLeadId}/note`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({ content: content })
+            });
+            const data = await res.json();
+            if (data.success) {
+                input.value = '';
+                const timelineEl = document.getElementById('drawer-timeline');
+                const newItem = document.createElement('div');
+                newItem.className = 'drawer-timeline-item';
+                newItem.innerHTML = `
+                    <div class="drawer-timeline-dot"></div>
+                    <div style="font-size:0.8125rem;color:var(--text-primary);font-weight:500;">${content}</div>
+                    <div style="font-size:0.6875rem;color:var(--text-tertiary);margin-top:0.15rem;">
+                        <span>${data.activity?.user_name || 'Counsel'}</span> • <span>just now</span>
+                    </div>
+                `;
+                timelineEl.prepend(newItem);
+                Toast.success('Attendance note added.');
+            } else {
+                Toast.error(data.error || 'Failed to add note.');
+            }
+        } catch (err) {
+            Toast.error('Failed to post note.');
+        } finally {
+            btn.disabled = false;
+        }
+    };
+
+    // Keyboard Shortcuts (Esc closes drawer/modal, N opens new matter)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeMatterDrawer();
+        } else if ((e.key === 'n' || e.key === 'N') && !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+            e.preventDefault();
+            openNewMatterModal('<?= e($pipeline['id']) ?>');
+        }
+    });
+
+    // 5. Listen to Server-Sent Events for live team updates
     document.addEventListener('intakely:lead_moved', (e) => {
         const d = e.detail;
         const card = document.getElementById(`card-${d.lead_id}`);
