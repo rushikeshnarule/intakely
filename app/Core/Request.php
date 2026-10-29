@@ -53,6 +53,14 @@ final class Request
 
         // Parse headers from $_SERVER
         $headers = [];
+        if (function_exists('getallheaders')) {
+            $all = getallheaders();
+            if (is_array($all)) {
+                foreach ($all as $k => $v) {
+                    $headers[strtolower((string)$k)] = (string)$v;
+                }
+            }
+        }
         foreach ($_SERVER as $key => $value) {
             if (str_starts_with($key, 'HTTP_')) {
                 $name = str_replace('_', '-', substr($key, 5));
@@ -108,11 +116,20 @@ final class Request
 
     public function input(string $key, mixed $default = null): mixed
     {
-        if ($this->isJson()) {
-            $json = $this->json();
-            return $json[$key] ?? $this->post[$key] ?? $this->query[$key] ?? $default;
+        $json = $this->json();
+        if (array_key_exists($key, $json)) {
+            return $json[$key];
         }
         return $this->post[$key] ?? $this->query[$key] ?? $default;
+    }
+
+    public function has(string $key): bool
+    {
+        $json = $this->json();
+        if (array_key_exists($key, $json)) {
+            return true;
+        }
+        return array_key_exists($key, $this->post) || array_key_exists($key, $this->query);
     }
 
     public function allInput(): array
